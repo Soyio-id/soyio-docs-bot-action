@@ -1,12 +1,12 @@
 {
   "name": "soyio-docs-bot",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "GitHub Action to suggest documentation updates based on PR changes",
   "main": "dist/index.js",
   "scripts": {
     "lint": "pnpm exec eslint \"src/**/*.{ts,js}\"",
-    "build": "tsc --project tsconfig.json",
-    "watch": "tsc --watch --project tsconfig.json",
+    "build": "pnpm exec tsc --noEmit --project tsconfig.json && pnpm exec ncc build src/index.ts -o dist",
+    "watch": "pnpm exec tsc --watch --noEmit --project tsconfig.json",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest watch"
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^20.0.0",
+    "@vercel/ncc": "^0.38.4",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "typescript": "^5.9.3",

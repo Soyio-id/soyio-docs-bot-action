@@ -55,7 +55,9 @@ jobs:
    pnpm install
    pnpm run build
    pnpm start
-   ```
+```
+
+The build uses `@vercel/ncc` to bundle runtime dependencies into `dist/index.js`, so the action works without installing `node_modules` on the runner. Rebuild and commit the updated `dist/` when shipping changes.
 
 ## How It Works
 
