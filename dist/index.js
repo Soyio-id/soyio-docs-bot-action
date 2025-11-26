@@ -68700,6 +68700,13 @@ function normalizeModelName(model) {
         return 'models/gemini-2.5-pro';
     return model.startsWith('models/') ? model : `models/${model}`;
 }
+function isIntegrationPermissionError(error) {
+    if (!error || typeof error !== 'object')
+        return false;
+    const message = error.message || '';
+    const status = error.status;
+    return status === 403 && message.includes('Resource not accessible by integration');
+}
 async function buildSearchQuery(geminiApiKey, geminiModel, prTitle, prBody, files) {
     const genai = new genai_1.GoogleGenAI({ apiKey: geminiApiKey });
     const fileSnippets = files.slice(0, 5).map(f => {
@@ -68779,16 +68786,29 @@ async function run() {
         core.info('='.repeat(60));
         // Get PR data
         const octokit = github.getOctokit(githubToken);
-        const { data: pr } = await octokit.rest.pulls.get({
-            owner,
-            repo: repoName,
-            pull_number: prNumber
-        });
-        const { data: files } = await octokit.rest.pulls.listFiles({
-            owner,
-            repo: repoName,
-            pull_number: prNumber
-        });
+        let pr;
+        let files;
+        try {
+            const prResponse = await octokit.rest.pulls.get({
+                owner,
+                repo: repoName,
+                pull_number: prNumber
+            });
+            const filesResponse = await octokit.rest.pulls.listFiles({
+                owner,
+                repo: repoName,
+                pull_number: prNumber
+            });
+            pr = prResponse.data;
+            files = filesResponse.data;
+        }
+        catch (apiError) {
+            if (isIntegrationPermissionError(apiError)) {
+                core.error('GitHub token is missing pull request permissions. The workflow needs pull-requests: read and issues: write to read PR data and post comments.');
+                throw new Error('GITHUB_TOKEN cannot access the pull request. Grant permissions: pull-requests: read, contents: read, issues: write.');
+            }
+            throw apiError;
+        }
         // Build base query from PR context
         const baseQuery = [
             pr.title,

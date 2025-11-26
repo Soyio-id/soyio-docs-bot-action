@@ -18,6 +18,10 @@ on:
 
 jobs:
   suggest:
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
     runs-on: ubuntu-latest
     steps:
       - uses: soyio-id/soyio-docs-bot-action@v1
@@ -30,6 +34,8 @@ jobs:
           # Optional: add extra context for the bot (tone, audience, style)
           prompt_instruction: 'Keep suggestions concise and user-facing'
 ```
+
+> **Permissions:** If your org restricts the default `GITHUB_TOKEN`, ensure the job has `pull-requests: read` (to fetch PR data), `issues: write` (to post comments), and `contents: read` (if using `actions/checkout`). Missing these can cause `Resource not accessible by integration` errors.
 
 ### Local Testing
 

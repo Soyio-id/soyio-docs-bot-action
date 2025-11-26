@@ -30,6 +30,15 @@ function normalizeModelName(model: string): string {
   return model.startsWith('models/') ? model : `models/${model}`;
 }
 
+function isIntegrationPermissionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const message = (error as Error).message || '';
+  const status = (error as { status?: number }).status;
+
+  return status === 403 && message.includes('Resource not accessible by integration');
+}
+
 async function buildSearchQuery(
   geminiApiKey: string,
   geminiModel: string,
@@ -130,17 +139,36 @@ async function run(): Promise<void> {
 
     // Get PR data
     const octokit = github.getOctokit(githubToken);
-    const { data: pr } = await octokit.rest.pulls.get({
-      owner,
-      repo: repoName,
-      pull_number: prNumber
-    });
+    type PullRequest = Awaited<ReturnType<typeof octokit.rest.pulls.get>>['data'];
+    type PullRequestFiles = Awaited<ReturnType<typeof octokit.rest.pulls.listFiles>>['data'];
 
-    const { data: files } = await octokit.rest.pulls.listFiles({
-      owner,
-      repo: repoName,
-      pull_number: prNumber
-    });
+    let pr: PullRequest;
+    let files: PullRequestFiles;
+
+    try {
+      const [prResponse, filesResponse] = await Promise.all([
+        octokit.rest.pulls.get({
+          owner,
+          repo: repoName,
+          pull_number: prNumber
+        }),
+        octokit.rest.pulls.listFiles({
+          owner,
+          repo: repoName,
+          pull_number: prNumber
+        })
+      ]);
+
+      pr = prResponse.data;
+      files = filesResponse.data;
+    } catch (apiError) {
+      if (isIntegrationPermissionError(apiError)) {
+        core.error('GitHub token is missing pull request permissions. The workflow needs `pull-requests: read`, `contents: read`, and `issues: write` to read PR data and post comments.');
+        throw new Error('GITHUB_TOKEN cannot access the pull request. Grant permissions: pull-requests: read, contents: read, issues: write.');
+      }
+
+      throw apiError;
+    }
 
     // Build base query from PR context
     const baseQuery = [
