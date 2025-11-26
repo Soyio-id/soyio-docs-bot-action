@@ -1,0 +1,48 @@
+name: "Soyio Docs Bot"
+description: "Suggest documentation updates based on PR changes"
+author: "Soyio"
+
+inputs:
+  pinecone_api_key:
+    description: "Pinecone API key"
+    required: true
+  pinecone_index:
+    description: "Pinecone index name"
+    required: true
+  gemini_api_key:
+    description: "Google Gemini API key"
+    required: true
+  gemini_model:
+    description: "Gemini model for text generation"
+    required: false
+    default: "gemini-2.5-pro"
+  github_token:
+    description: "GitHub token for posting comments"
+    required: true
+  pr_number:
+    description: "PR number to analyze"
+    required: false
+  repo:
+    description: "Repository (owner/name)"
+    required: false
+  top_k:
+    description: "Number of relevant docs to retrieve"
+    required: false
+    default: "5"
+  prompt_instruction:
+    description: "Optional tone/audience guidance for the PR comment intro (doc text follows existing docs tone)"
+    required: false
+
+outputs:
+  suggestions_count:
+    description: "Number of suggestions generated"
+  impact_level:
+    description: "Impact level (none, low, medium, high)"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
+
+branding:
+  icon: "file-text"
+  color: "purple"
