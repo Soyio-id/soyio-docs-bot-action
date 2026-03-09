@@ -1,6 +1,6 @@
 {
   "name": "soyio-docs-bot",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "GitHub Action to suggest documentation updates based on PR changes",
   "main": "dist/index.js",
   "scripts": {
@@ -30,7 +30,8 @@
   },
   "pnpm": {
     "overrides": {
-      "jws": "4.0.1"
+      "jws": "4.0.1",
+      "undici": "^6.23.0"
     }
   }
 }
